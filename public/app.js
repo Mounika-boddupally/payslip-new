@@ -8,22 +8,48 @@ let searchTimeout = null;
 
 // ══ FLATPICKR WITH TAB SUPPORT ════════════════════
 
-function setupDatePicker(inputId, onCompleteCallback) {
-  const input = document.getElementById(inputId);
-  if (!input) return;
 
-  // Initialize flatpickr calendar
-  const picker = flatpickr(input, {
+flatpickr("#doj", {
+    dateFormat: "d.m.Y",
+    allowInput: true
+});
+
+flatpickr("#payFrom", {
+
     dateFormat: "d.m.Y",
     allowInput: true,
-    disableMobile: true,  // use flatpickr on mobile too
 
-    onChange: function(selectedDates, dateStr) {
-      if (selectedDates.length > 0) {
-        if (onCompleteCallback) onCompleteCallback(selectedDates[0], dateStr);
-      }
+    onChange: function(selectedDates){
+
+        if(selectedDates.length > 0){
+
+            let fromDate = selectedDates[0];
+
+            // LAST DAY OF MONTH
+            let lastDay = new Date(
+                fromDate.getFullYear(),
+                fromDate.getMonth() + 1,
+                0
+            );
+
+            // AUTO SET PAY TO
+            document.getElementById("payTo")._flatpickr
+            .setDate(lastDay, true);
+
+            calcPayDays();
+        }
     }
-  });
+});
+
+flatpickr("#payTo", {
+
+    dateFormat: "d.m.Y",
+    allowInput: true,
+
+    onChange: function(){
+        calcPayDays();
+    }
+});
 
   // ── TAB THROUGH DD → MM → YYYY ─────────────────
   input.addEventListener('keydown', function(e) {
