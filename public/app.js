@@ -491,6 +491,7 @@ parseFloat(document.getElementById('travelAllowance').value) || 0;
 
   // Save or update employee
   let empId = currentEmployeeId;
+  console.log('empId before save:', empId);
   try {
     if (!empId) {
       const res = await fetch(`${API}/employees`, {
@@ -569,11 +570,9 @@ function gatherEmployeeData() {
 }
 
 function formatPayPeriod(dateStr) {
-  const d = new Date(dateStr);
-  const dd = String(d.getDate()).padStart(2,'0');
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const yyyy = d.getFullYear();
-  return `${dd}.${mm}.${yyyy}`;
+  if (!dateStr) return '';
+  // flatpickr already gives DD.MM.YYYY — return as-is
+  return dateStr;
 }
 
 function clearForm() {
