@@ -20,7 +20,7 @@
   <div class="nav-center">
     <img src="images/NRSoftechlogo.png" alt="NR Softech Logo" class="nav-logo" />
     <div class="nav-company-title">NR SOFTECH (I) PVT. LTD.</div>
-    <div class="nav-payslip-label" id="navPayslipLabel">Employee Payslip</div>
+    <div class="nav-payslip-label" id="monthTitle">Payslip For The Month Of ----</div>
     <div class="nav-action-row">
       <button class="btn-nav" id="btnNewEntry" onclick="showTab('form')">
         <i class="bi bi-person-plus-fill"></i> Add Employee
@@ -122,7 +122,7 @@
           <div class="det-col pay-period-row">
             <label>Pay Period</label>
             <div class="pay-period-inputs">
-              <input type="date" id="payFrom" class="det-input date-pick"/>
+              <input type="date" id="payFrom" class="det-input date-pick" onchange="updateMonthTitle()"/>
               <span class="to-label">to</span>
               <input type="date" id="payTo" class="det-input date-pick"/>
             </div>

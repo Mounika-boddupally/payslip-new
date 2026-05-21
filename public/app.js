@@ -740,10 +740,8 @@ function buildPayslipHTML(s) {
   <div class="payslip-view-card" id="printable">
     <div class="pv-header">
       <img src="images/NRSoftechlogo.png" alt="Logo" class="pv-logo" />
-      <div>
-        <div class="pv-company-name">NR SOFTECH (I) PVT. LTD.</div>
-        <div class="pv-company-sub">Payslip / Salary Slip</div>
-      </div>
+      <div class="pv-company-name">NR SOFTECH (I) PVT. LTD.</div>
+      <div class="pv-company-sub">Payslip For The Month Of ${getMonthYear(s.pay_from)}</div>
     </div>
     <div class="pv-rainbow"></div>
 
@@ -845,3 +843,29 @@ document.addEventListener('DOMContentLoaded', () => {
   showTab('form');
   recalcAll();
 });
+function getMonthYear(dateStr) {
+  if (!dateStr) return '----';
+  let parts = dateStr.split('.');
+  if (parts.length !== 3) return '----';
+  let date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+  let month = date.toLocaleString('default', { month: 'long' });
+  let year = date.getFullYear();
+  return `${month} ${year}`;
+}
+function updateMonthTitle() {
+  let payFrom = document.getElementById('payFrom').value;
+  if (payFrom) {
+    // Parse DD.MM.YYYY format from flatpickr
+    let parts = payFrom.split('.');
+    let day   = parseInt(parts[0]);
+    let month = parseInt(parts[1]) - 1; // 0-indexed
+    let year  = parseInt(parts[2]);
+
+    let date = new Date(year, month, day);
+    let monthName = date.toLocaleString('default', { month: 'long' });
+
+    document.getElementById('monthTitle').innerText =
+      `Payslip For The Month Of ${monthName} ${year}`;
+  }
+}
+ 
