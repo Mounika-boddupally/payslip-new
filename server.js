@@ -9,8 +9,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
-
+const PORT = process.env.PORT || 3000;
 // ── Middleware ──────────────────────────────────────
 app.use(cors());
 app.use(bodyParser.json());
@@ -135,11 +134,11 @@ app.post('/api/payslips', (req, res) => {
     ee_pf_contribution, prof_tax, med_insurance, sodexo_deduction, total_deductions,
     net_pay
   ], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {return res.status(500).json({ error: err.message });
     res.json({ id: result.insertId, message: 'Payslip saved successfully' });
-  });
+  };
 });
-
+ });
 // ── Serve index.html ────────────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
