@@ -2,7 +2,7 @@
 // NR SOFTECH PAYSLIP SYSTEM — FRONTEND JS
 // =====================================================
 
-const API = 'http://localhost:3000/api';
+const API = window.location.origin + '/api';
 let currentEmployeeId = null;
 let searchTimeout = null;
 
