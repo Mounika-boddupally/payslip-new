@@ -122,9 +122,11 @@
           <div class="det-col pay-period-row">
             <label>Pay Period</label>
             <div class="pay-period-inputs">
-              <input type="date" id="payFrom" class="det-input date-pick" onchange="updateMonthTitle()"/>
+              <input type="date" id="payFrom" class="det-input date-pick"
+              placeholder="dd.mm.yy" maxlength="10" onchange="updateMonthTitle()"/>
               <span class="to-label">to</span>
-              <input type="date" id="payTo" class="det-input date-pick"/>
+              <input type="date" id="payTo" class="det-input date-pick"
+              placeholder="dd.mm.yy" maxlength="10"/>
             </div>
           </div>
           <div class="det-col right">

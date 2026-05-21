@@ -6,46 +6,122 @@ const API = 'http://localhost:3000/api';
 let currentEmployeeId = null;
 let searchTimeout = null;
 
-flatpickr("#doj", {
-    dateFormat: "d.m.Y",
-    allowInput: true
-});
+// ══ FLATPICKR WITH TAB SUPPORT ════════════════════
 
-flatpickr("#payFrom", {
+function setupDatePicker(inputId, onCompleteCallback) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
 
+  // Initialize flatpickr calendar
+  const picker = flatpickr(input, {
     dateFormat: "d.m.Y",
     allowInput: true,
+    disableMobile: true,  // use flatpickr on mobile too
 
-    onChange: function(selectedDates){
+    onChange: function(selectedDates, dateStr) {
+      if (selectedDates.length > 0) {
+        if (onCompleteCallback) onCompleteCallback(selectedDates[0], dateStr);
+      }
+    }
+  });
 
-        if(selectedDates.length > 0){
+  // ── TAB THROUGH DD → MM → YYYY ─────────────────
+  input.addEventListener('keydown', function(e) {
+    // Allow: backspace, delete, arrows, tab
+    if ([8, 9, 16, 37, 38, 39, 40, 46].includes(e.keyCode)) return;
 
-            let fromDate = selectedDates[0];
+    // Only allow numbers
+    if (e.key < '0' || e.key > '9') {
+      e.preventDefault();
+      return;
+    }
 
-            // LAST DAY OF MONTH
-            let lastDay = new Date(
-                fromDate.getFullYear(),
-                fromDate.getMonth() + 1,
-                0
-            );
+    const val   = this.value;
+    const digits = val.replace(/\./g, '').length;
 
-            // AUTO SET PAY TO
-            document.getElementById("payTo")._flatpickr
-            .setDate(lastDay, true);
+    // Auto insert dot after DD and MM
+    if (digits === 2 || digits === 4) {
+      this.value = val + '.';
+    }
 
-            calcPayDays();
+    // Stop at 8 digits (DD.MM.YYYY)
+    if (digits >= 8) {
+      e.preventDefault();
+      return;
+    }
+  });
+
+  // Auto validate and trigger callback on full date typed
+  input.addEventListener('keyup', function(e) {
+    const val = this.value;
+    if (val.length === 10) {
+      // Parse and validate
+      const parts = val.split('.');
+      if (parts.length === 3) {
+        const dd = parseInt(parts[0]);
+        const mm = parseInt(parts[1]) - 1;
+        const yy = parseInt(parts[2]);
+        const date = new Date(yy, mm, dd);
+
+        if (!isNaN(date)) {
+          // Sync to flatpickr
+          picker.setDate(date, false);
+          if (onCompleteCallback) onCompleteCallback(date, val);
         }
+      }
     }
+  });
+
+  return picker;
+}
+
+// ══ INITIALIZE ALL DATE PICKERS ═══════════════════
+
+// DOJ picker
+setupDatePicker('doj', function(date, dateStr) {
+  // Move focus to Pay From when done
+  setTimeout(() => {
+    document.getElementById('payFrom').focus();
+  }, 100);
 });
 
-flatpickr("#payTo", {
+// Pay From picker
+const payFromPicker = setupDatePicker('payFrom', function(date, dateStr) {
+  // Auto set Pay To to last day of same month
+  const lastDay = new Date(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    0
+  );
 
-    dateFormat: "d.m.Y",
-    allowInput: true,
+  const dd = String(lastDay.getDate()).padStart(2, '0');
+  const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
+  const yy = lastDay.getFullYear();
 
-    onChange: function(){
-        calcPayDays();
-    }
+  // Set Pay To field value and flatpickr
+  const payToInput = document.getElementById('payTo');
+  payToInput.value = `${dd}.${mm}.${yy}`;
+
+  const payToPicker = payToInput._flatpickr;
+  if (payToPicker) payToPicker.setDate(lastDay, false);
+
+  // Update nav title and calculate days
+  updateMonthTitle();
+  calcPayDays();
+
+  // Move focus to Pay To
+  setTimeout(() => {
+    document.getElementById('payTo').focus();
+  }, 100);
+});
+
+// Pay To picker
+setupDatePicker('payTo', function(date, dateStr) {
+  calcPayDays();
+  // Move focus to Leaves Taken
+  setTimeout(() => {
+    document.getElementById('leavesTaken').focus();
+  }, 100);
 });
 
 // ══ TAB MANAGEMENT ════════════════════════════════
