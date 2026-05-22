@@ -115,30 +115,85 @@ app.post('/api/payslips', (req, res) => {
     employee_id, pay_from, pay_to, paid_days, leaves_taken,
     basic_pay, hra, meal_coupon, total_earnings,
     income_tax, total_tax,
-    ee_pf_contribution, prof_tax, med_insurance, sodexo_deduction, total_deductions,
+    ee_pf_contribution, prof_tax, med_insurance,
+    sodexo_deduction, total_deductions,
     net_pay
   } = req.body;
- db.query('SELECT id FROM employees WHERE id = ?', [employee_id], (err, rows) => {
-    if (err || !rows.length) {
-      return res.status(400).json({ error: 'Employee not found. Save employee first.' });
-    }
-  const sql = `INSERT INTO payslips
-    (employee_id, pay_from, pay_to, paid_days, leaves_taken, basic_pay, hra, meal_coupon, total_earnings,
-     income_tax, total_tax, ee_pf_contribution, prof_tax, med_insurance, sodexo_deduction, total_deductions, net_pay)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
 
-  db.query(sql, [
-    employee_id, pay_from, pay_to, paid_days, leaves_taken || 0,
-    basic_pay, hra, meal_coupon, total_earnings,
-    income_tax, total_tax,
-    ee_pf_contribution, prof_tax, med_insurance, sodexo_deduction, total_deductions,
-    net_pay
-  ], (err, result) => {
-    if (err) {return res.status(500).json({ error: err.message });
-    res.json({ id: result.insertId, message: 'Payslip saved successfully' });
-  };
+  db.query(
+    'SELECT id FROM employees WHERE id = ?',
+    [employee_id],
+    (err, rows) => {
+
+      if (err || !rows.length) {
+        return res.status(400).json({
+          error: 'Employee not found. Save employee first.'
+        });
+      }
+
+      const sql = `
+        INSERT INTO payslips
+        (
+          employee_id,
+          pay_from,
+          pay_to,
+          paid_days,
+          leaves_taken,
+          basic_pay,
+          hra,
+          meal_coupon,
+          total_earnings,
+          income_tax,
+          total_tax,
+          ee_pf_contribution,
+          prof_tax,
+          med_insurance,
+          sodexo_deduction,
+          total_deductions,
+          net_pay
+        )
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `;
+
+      db.query(sql, [
+
+        employee_id,
+        pay_from,
+        pay_to,
+        paid_days,
+        leaves_taken || 0,
+        basic_pay,
+        hra,
+        meal_coupon,
+        total_earnings,
+        income_tax,
+        total_tax,
+        ee_pf_contribution,
+        prof_tax,
+        med_insurance,
+        sodexo_deduction,
+        total_deductions,
+        net_pay
+
+      ], (err, result) => {
+
+        if (err) {
+          return res.status(500).json({
+            error: err.message
+          });
+        }
+
+        res.json({
+          id: result.insertId,
+          message: 'Payslip saved successfully'
+        });
+
+      });
+
+    }
+  );
+
 });
- });
 // ── Serve index.html ────────────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -148,4 +203,3 @@ app.listen(PORT, () => {
   console.log(`\n🚀 NR Softech Payslip System running at http://localhost:${PORT}`);
   console.log(`   Press Ctrl+C to stop\n`);
 });
-})

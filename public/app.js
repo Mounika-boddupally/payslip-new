@@ -8,147 +8,196 @@ let searchTimeout = null;
 
 // ══ FLATPICKR WITH TAB SUPPORT ════════════════════
 
-
-flatpickr("#doj", {
-    dateFormat: "d.m.Y",
-    allowInput: true
-});
-
-flatpickr("#payFrom", {
-
-    dateFormat: "d.m.Y",
-    allowInput: true,
-
-    onChange: function(selectedDates){
-
-        if(selectedDates.length > 0){
-
-            let fromDate = selectedDates[0];
-
-            // LAST DAY OF MONTH
-            let lastDay = new Date(
-                fromDate.getFullYear(),
-                fromDate.getMonth() + 1,
-                0
-            );
-
-            // AUTO SET PAY TO
-            document.getElementById("payTo")._flatpickr
-            .setDate(lastDay, true);
-
-            calcPayDays();
-        }
-    }
-});
-
-flatpickr("#payTo", {
-
-    dateFormat: "d.m.Y",
-    allowInput: true,
-
-    onChange: function(){
-        calcPayDays();
-    }
-});
-
-  // ── TAB THROUGH DD → MM → YYYY ─────────────────
-  input.addEventListener('keydown', function(e) {
-    // Allow: backspace, delete, arrows, tab
-    if ([8, 9, 16, 37, 38, 39, 40, 46].includes(e.keyCode)) return;
-
-    // Only allow numbers
-    if (e.key < '0' || e.key > '9') {
-      e.preventDefault();
-      return;
-    }
-
-    const val   = this.value;
-    const digits = val.replace(/\./g, '').length;
-
-    // Auto insert dot after DD and MM
-    if (digits === 2 || digits === 4) {
-      this.value = val + '.';
-    }
-
-    // Stop at 8 digits (DD.MM.YYYY)
-    if (digits >= 8) {
-      e.preventDefault();
-      return;
-    }
-  });
-
-  // Auto validate and trigger callback on full date typed
-  input.addEventListener('keyup', function(e) {
-    const val = this.value;
-    if (val.length === 10) {
-      // Parse and validate
-      const parts = val.split('.');
-      if (parts.length === 3) {
-        const dd = parseInt(parts[0]);
-        const mm = parseInt(parts[1]) - 1;
-        const yy = parseInt(parts[2]);
-        const date = new Date(yy, mm, dd);
-
-        if (!isNaN(date)) {
-          // Sync to flatpickr
-          picker.setDate(date, false);
-          if (onCompleteCallback) onCompleteCallback(date, val);
+function setupDatePicker(inputId, onComplete, nextFieldId) {
+  const input = document.getElementById(inputId);
+  if (!input) return null;
+  const picker = flatpickr(input, {
+    dateFormat: 'd.m.Y',      
+    allowInput: true,          
+    disableMobile: true, 
+     onReady: function(selectedDates, dateStr, fp) {
+       fp.calendarContainer && fp.calendarContainer.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+    },
+     onChange: function(selectedDates, dateStr) {
+      if (selectedDates.length > 0) {
+        const d = selectedDates[0];
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yy = d.getFullYear();
+        const formatted = `${dd}.${mm}.${yy}`;
+        input.value = formatted;
+ 
+        if (onComplete) onComplete(d, formatted);
+ 
+        if (nextFieldId) {
+          setTimeout(() => {
+            const nextEl = document.getElementById(nextFieldId);
+            if (nextEl) nextEl.focus();
+          }, 100);
         }
       }
     }
   });
+   let digitBuffer = '';
+ 
+  input.addEventListener('focus', function() {
+  
+    digitBuffer = (input.value || '').replace(/\D/g, '');
+  });
+ 
+  input.addEventListener('keydown', function(e) {
+    const key = e.key;
+    if (['Backspace', 'Delete', 'Tab', 'Escape',
+         'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) {
+ 
+      if (key === 'Backspace') {
+        e.preventDefault();
+        digitBuffer = digitBuffer.slice(0, -1);
+        renderBuffer();
+        }
+      return; 
+    }
+    if (key < '0' || key > '9') {
+      e.preventDefault();
+      return;
+    }
+ 
+   
+    if (digitBuffer.length >= 8) {
+      e.preventDefault();
+      return;
+    }
+ 
+    e.preventDefault(); 
+ 
+    digitBuffer += key;
+    renderBuffer();
+ 
+   
+    if (digitBuffer.length === 8) {
+      const dd = parseInt(digitBuffer.slice(0, 2));
+      const mm = parseInt(digitBuffer.slice(2, 4)) - 1; 
+      const yy = parseInt(digitBuffer.slice(4, 8));
+      const date = new Date(yy, mm, dd);
+ 
+     
+      if (
+        !isNaN(date) &&
+        date.getFullYear() === yy &&
+        date.getMonth() === mm &&
+        date.getDate() === dd
+      ) {
+        
+        picker.setDate(date, false);
+        if (onComplete) onComplete(date, input.value);
+ 
+        if (nextFieldId) {
+          setTimeout(() => {
+            const nextEl = document.getElementById(nextFieldId);
+            if (nextEl) nextEl.focus();
+          }, 100);
+        }
+      }
+    }
+  });
+ 
+  input.addEventListener('paste', function(e) {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = pasted.replace(/\D/g, '').slice(0, 8 - digitBuffer.length);
+    digitBuffer += digits;
+    renderBuffer();
+  });
 
+  function renderBuffer() {
+    const d = digitBuffer;
+    let display = '';
+    if (d.length <= 2) {
+      display = d;
+    } else if (d.length <= 4) {
+      display = d.slice(0, 2) + '.' + d.slice(2);
+    } else {
+      display = d.slice(0, 2) + '.' + d.slice(2, 4) + '.' + d.slice(4);
+    }
+    input.value = display;
+  }
+ 
   return picker;
 }
 
-// ══ INITIALIZE ALL DATE PICKERS ═══════════════════
-
-// DOJ picker
+// ══ INITIALIZE DATE PICKERS ═══════════════════════════
+ 
 setupDatePicker('doj', function(date, dateStr) {
-  // Move focus to Pay From when done
-  setTimeout(() => {
-    document.getElementById('payFrom').focus();
-  }, 100);
+  setTimeout(() => document.getElementById('payFrom').focus(), 100);
 });
-
-// Pay From picker
+ 
 const payFromPicker = setupDatePicker('payFrom', function(date, dateStr) {
-  // Auto set Pay To to last day of same month
-  const lastDay = new Date(
-    date.getFullYear(),
-    date.getMonth() + 1,
-    0
-  );
-
+ 
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
   const dd = String(lastDay.getDate()).padStart(2, '0');
   const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
   const yy = lastDay.getFullYear();
-
-  // Set Pay To field value and flatpickr
+  const formatted = `${dd}.${mm}.${yy}`;
+ 
   const payToInput = document.getElementById('payTo');
-  payToInput.value = `${dd}.${mm}.${yy}`;
-
-  const payToPicker = payToInput._flatpickr;
-  if (payToPicker) payToPicker.setDate(lastDay, false);
-
-  // Update nav title and calculate days
+  if (payToInput) {
+    payToInput.value = formatted;
+    if (payToInput._flatpickr) payToInput._flatpickr.setDate(lastDay, false);
+  }
+ 
   updateMonthTitle();
   calcPayDays();
-
-  // Move focus to Pay To
-  setTimeout(() => {
-    document.getElementById('payTo').focus();
-  }, 100);
+ 
+  setTimeout(() => document.getElementById('payTo').focus(), 100);
 });
 
-// Pay To picker
 setupDatePicker('payTo', function(date, dateStr) {
   calcPayDays();
-  // Move focus to Leaves Taken
-  setTimeout(() => {
-    document.getElementById('leavesTaken').focus();
-  }, 100);
+  setTimeout(() => document.getElementById('leavesTaken').focus(), 100);
 });
+function enableDateTabNavigation(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+ 
+  input.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab') return;
+ 
+    const val = input.value;
+    const pos = input.selectionStart;
+     if (!e.shiftKey) {
+      
+      if (pos <= 2) {
+        
+        e.preventDefault();
+        input.setSelectionRange(3, 5);
+      } else if (pos <= 5) {
+       
+        e.preventDefault();
+        input.setSelectionRange(6, 10);
+      }
+      
+    } else {
+      
+      if (pos >= 6) {
+      
+        e.preventDefault();
+        input.setSelectionRange(3, 5);
+      } else if (pos >= 3) {
+        
+        e.preventDefault();
+        input.setSelectionRange(0, 2);
+      }
+    }
+  });
+  input.addEventListener('focus', function () {
+    setTimeout(() => input.setSelectionRange(0, 2), 0);
+  });
+}
+enableDateTabNavigation('doj');
+enableDateTabNavigation('payFrom');
+enableDateTabNavigation('payTo');
 
 // ══ TAB MANAGEMENT ════════════════════════════════
 
