@@ -160,41 +160,43 @@ setupDatePicker('payTo', function(date, dateStr) {
 function enableDateTabNavigation(inputId) {
   const input = document.getElementById(inputId);
   if (!input) return;
- 
-  input.addEventListener('keydown', function (e) {
+
+  // Block non-digits, auto-insert dots
+  input.addEventListener('keydown', function(e) {
+    if (['Backspace','Delete','Tab','Escape',
+         'ArrowLeft','ArrowRight'].includes(e.key)) return;
+    if (e.key < '0' || e.key > '9') { e.preventDefault(); return; }
+    if (input.value.replace(/\./g,'').length >= 8) { e.preventDefault(); }
+  });
+
+  input.addEventListener('input', function() {
+    let digits = input.value.replace(/\D/g, '');
+    if (digits.length > 8) digits = digits.slice(0, 8);
+    let formatted = digits;
+    if (digits.length > 2) formatted = digits.slice(0,2) + '.' + digits.slice(2);
+    if (digits.length > 4) formatted = digits.slice(0,2) + '.' + digits.slice(2,4) + '.' + digits.slice(4);
+    input.value = formatted;
+  });
+
+  // Tab moves DD → MM → YYYY
+  input.addEventListener('keydown', function(e) {
     if (e.key !== 'Tab') return;
- 
-    const val = input.value;
     const pos = input.selectionStart;
-     if (!e.shiftKey) {
-      
-      if (pos <= 2) {
-        
-        e.preventDefault();
-        input.setSelectionRange(3, 5);
-      } else if (pos <= 5) {
-       
-        e.preventDefault();
-        input.setSelectionRange(6, 10);
-      }
-      
+    if (!e.shiftKey) {
+      if (pos <= 2)      { e.preventDefault(); input.setSelectionRange(3, 5); }
+      else if (pos <= 5) { e.preventDefault(); input.setSelectionRange(6, 10); }
     } else {
-      
-      if (pos >= 6) {
-      
-        e.preventDefault();
-        input.setSelectionRange(3, 5);
-      } else if (pos >= 3) {
-        
-        e.preventDefault();
-        input.setSelectionRange(0, 2);
-      }
+      if (pos >= 6)      { e.preventDefault(); input.setSelectionRange(3, 5); }
+      else if (pos >= 3) { e.preventDefault(); input.setSelectionRange(0, 2); }
     }
   });
-  input.addEventListener('focus', function () {
+
+  // Select DD on focus
+  input.addEventListener('focus', function() {
     setTimeout(() => input.setSelectionRange(0, 2), 0);
   });
 }
+
 enableDateTabNavigation('doj');
 enableDateTabNavigation('payFrom');
 enableDateTabNavigation('payTo');
